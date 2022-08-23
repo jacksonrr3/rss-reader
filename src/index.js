@@ -1,3 +1,5 @@
 import './scss/styles.scss';
 
-console.log('Hello World!');
+import RunApp from './rss-aggregator/app.js';
+
+RunApp();
