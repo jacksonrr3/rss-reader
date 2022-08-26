@@ -1,5 +1,5 @@
 import * as yup from 'yup';
-import { render, getWatchedState } from './view.js';
+import getWatchedState from './view.js';
 
 const invalidUrlText = 'Ссылка должна быть валидным URL';
 const rssIsExist = 'RSS уже существует';
