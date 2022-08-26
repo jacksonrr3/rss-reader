@@ -17,7 +17,6 @@ const renderInputIsValid = (el, isValid) => {
 export default (state, elements) => {
   const { feedback, urlInput } = elements;
   return onChange(state, (path, value) => {
-    console.log(path);
     if (path === 'form.feedback') {
       renderFeedback(feedback, value);
     }
