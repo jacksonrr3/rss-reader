@@ -1,5 +1,5 @@
 import './scss/styles.scss';
 
-import RunApp from './rss-aggregator/app.js';
+import runApp from './rss-aggregator/app.js';
 
-RunApp();
+runApp();

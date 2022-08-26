@@ -1,15 +1,24 @@
 import * as yup from 'yup';
+import i18next from 'i18next';
+
+import en from './locales/en.js';
+
 import getWatchedState from './view.js';
 
-const invalidUrlText = 'Ссылка должна быть валидным URL';
-const rssIsExist = 'RSS уже существует';
+yup.setLocale({
+  mixed: {
+    notOneOf: 'validateErrors.rssIsExist',
+  },
+  string: {
+    url: 'validateErrors.invalidUrl',
+  },
+});
 
 const getValidateFunc = (rssLinks) => (url) => {
   const schema = yup.object().shape({
-    url: yup
-      .string()
-      .url(invalidUrlText)
-      .notOneOf(rssLinks, rssIsExist),
+    url: yup.string()
+      .url()
+      .notOneOf(rssLinks),
   });
   return schema.validate(url);
 };
@@ -31,24 +40,36 @@ export default () => {
     rss: [],
   };
 
-  const watchedState = getWatchedState(state, elements);
-  const validate = getValidateFunc(watchedState.rss);
+  const i18nInstance = i18next.createInstance();
 
-  elements.form.addEventListener('submit', (event) => {
-    event.preventDefault();
-    const formData = new FormData(event.target);
-    const url = formData.get('url');
-    validate({ url })
-      .then(({ rss: validUrl }) => {
-        console.log('then url', validUrl);
-        watchedState.form.feedback = [''];
-        watchedState.form.valid = true;
+  i18nInstance
+    .init({
+      lng: 'en',
+      debug: true,
+      resources: {
+        en,
+      },
+    })
+    .then((t) => {
+      const watchedState = getWatchedState(state, elements);
 
-        elements.urlInput.value = '';
-      })
-      .catch((error) => {
-        watchedState.form.feedback = error.errors;
-        watchedState.form.valid = false;
+      elements.form.addEventListener('submit', (event) => {
+        event.preventDefault();
+        const formData = new FormData(event.target);
+        const url = formData.get('url');
+        const validate = getValidateFunc(watchedState.rss, t);
+        validate({ url })
+          .then(({ rss: validUrl }) => {
+            console.log(validUrl);
+            watchedState.form.feedback = [''];
+            watchedState.form.valid = true;
+
+            elements.urlInput.value = '';
+          })
+          .catch(({ errors }) => {
+            watchedState.form.feedback = errors.map((err) => t(err));
+            watchedState.form.valid = false;
+          });
       });
-  });
+    });
 };
