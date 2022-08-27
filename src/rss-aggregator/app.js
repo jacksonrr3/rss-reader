@@ -1,9 +1,12 @@
+import axios from 'axios';
 import * as yup from 'yup';
 import i18next from 'i18next';
+import { uniqueId } from 'lodash';
 
 import en from './locales/en.js';
 
 import getWatchedState from './view.js';
+import parseData from './parser.js';
 
 yup.setLocale({
   mixed: {
@@ -16,7 +19,8 @@ yup.setLocale({
 
 const getValidateFunc = (rssLinks) => (url) => {
   const schema = yup.object().shape({
-    url: yup.string()
+    url: yup
+      .string()
       .url()
       .notOneOf(rssLinks),
   });
@@ -59,16 +63,34 @@ export default () => {
         const url = formData.get('url');
         const validate = getValidateFunc(watchedState.rss, t);
         validate({ url })
-          .then(({ rss: validUrl }) => {
-            console.log(validUrl);
+          .then(({ url: validUrl }) => {
             watchedState.form.feedback = [''];
             watchedState.form.valid = true;
+            watchedState.form.prosessState = 'sending';
+            return axios.get(validUrl);
 
-            elements.urlInput.value = '';
+            // elements.urlInput.value = '';
+            // watchedState.form.feedback = t('rssSuccessLoaded');
           })
-          .catch(({ errors }) => {
-            watchedState.form.feedback = errors.map((err) => t(err));
-            watchedState.form.valid = false;
+          .then((response) => {
+            const { data } = response;
+            const result = parseData(data, 'text/xml');
+            // console.log(parsedData);
+            // console.log(uniqueId());
+          })
+          .catch((error) => {
+            console.log(error);
+            const { name } = error;
+            if (name === 'ValidationError') {
+              watchedState.form.feedback = error.errors.map((err) => t(err));
+              watchedState.form.valid = false;
+            }
+            if (name === 'AxiosError') {
+              watchedState.form.feedback = t('networkError');
+            }
+            if (name === 'RssParsingError') {
+              watchedState.form.feedback = t(error.message);
+            }
           });
       });
     });

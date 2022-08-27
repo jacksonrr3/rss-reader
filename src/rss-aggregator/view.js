@@ -2,7 +2,7 @@ import onChange from 'on-change';
 
 const renderFeedback = (el, texts) => {
   const fb = el;
-  fb.innerText = texts.join(', ');
+  fb.innerText = Array.isArray(texts) ? texts.join(', ') : texts;
 };
 
 const renderInputIsValid = (el, isValid) => {
