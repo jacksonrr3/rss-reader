@@ -8,6 +8,7 @@ import en from './locales/en.js';
 import getWatchedState from './view.js';
 import parseData from './parser.js';
 
+const allOriginProxyUrl = 'https://allorigins.hexlet.app/get';
 let feedId = 0;
 
 yup.setLocale({
@@ -76,11 +77,16 @@ export default () => {
             watchedState.form.feedback = [''];
             watchedState.form.valid = true;
             watchedState.form.processState = 'sending';
-            return axios.get(validUrl);
+            return axios.get(allOriginProxyUrl, {
+              params: {
+                disableCache: true,
+                url: validUrl,
+              },
+            });
           })
           .then((res) => {
-            const { data, request } = res;
-            const { feed, items } = parseData(data, 'text/xml');
+            const { data } = res;
+            const { feed, items } = parseData(data.contents, 'text/xml');
             feed.id = feedId;
             const posts = items.map((item) => ({
               ...item,
@@ -88,18 +94,16 @@ export default () => {
               feedId,
             }));
             feedId += 1;
-console.log(feed)
             elements.form.reset();
             elements.form.focus();
 
             watchedState.form.processState = 'sent';
             watchedState.form.feedback = t('rssSuccessLoaded');
-            watchedState.rssUrls.push(request.responseURL);
+            watchedState.rssUrls.push(data.status.url);
             watchedState.feeds.push(feed);
             watchedState.posts.push(...posts);
           })
           .catch((error) => {
-            console.log(error);
             const { name } = error;
             if (name === 'ValidationError') {
               watchedState.form.feedback = error.errors.map((err) => t(err));
