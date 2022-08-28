@@ -5,6 +5,14 @@ class RssParsingError extends Error {
   }
 }
 
+const extractValuesFromDoc = (doc, props) => {
+  const resultObject = props.reduce(
+    (acc, prop) => ({ ...acc, [prop]: doc.querySelector(prop).textContent }),
+    {},
+  );
+  return resultObject;
+};
+
 export default (parsedString, mimeType) => {
   const domParser = new DOMParser();
   const dataDocument = domParser.parseFromString(parsedString, mimeType);
@@ -12,13 +20,15 @@ export default (parsedString, mimeType) => {
   if (!rss) {
     throw new RssParsingError('notRssResource');
   }
-  const title = dataDocument.querySelector('title').textContent;
-  const description = dataDocument.querySelector('description').textContent;
-  const link = dataDocument.querySelector('link').textContent;
-  console.log(title);
-  console.log(description);
-  console.log(link);
-  console.log(dataDocument);
-  const items = dataDocument.querySelectorAll('item');
-  console.log(items);
+  // console.log(dataDocument);
+  const feed = extractValuesFromDoc(dataDocument, [
+    'title',
+    'description',
+    'link',
+  ]);
+  const items = Array.from(dataDocument.querySelectorAll('item')).map(
+    (item) => extractValuesFromDoc(item, ['title', 'description', 'link']),
+  );
+  // console.log(items);
+  return { feed, items };
 };

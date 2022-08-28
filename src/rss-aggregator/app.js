@@ -42,6 +42,8 @@ export default () => {
       feedback: '',
     },
     rss: [],
+    feeds: [],
+    posts: [],
   };
 
   const i18nInstance = i18next.createInstance();
@@ -68,13 +70,13 @@ export default () => {
             watchedState.form.valid = true;
             watchedState.form.prosessState = 'sending';
             return axios.get(validUrl);
-
-            // elements.urlInput.value = '';
-            // watchedState.form.feedback = t('rssSuccessLoaded');
           })
           .then((response) => {
             const { data } = response;
-            const result = parseData(data, 'text/xml');
+            const { feed, posts } = parseData(data, 'text/xml');
+            // watchedState;
+            elements.urlInput.value = '';
+            watchedState.form.feedback = t('rssSuccessLoaded');
             // console.log(parsedData);
             // console.log(uniqueId());
           })
