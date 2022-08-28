@@ -8,6 +8,8 @@ import en from './locales/en.js';
 import getWatchedState from './view.js';
 import parseData from './parser.js';
 
+let feedId = 0;
+
 yup.setLocale({
   mixed: {
     notOneOf: 'validateErrors.rssIsExist',
@@ -32,23 +34,24 @@ export default () => {
     form: document.querySelector('.rss-form'),
     urlInput: document.getElementById('url-input'),
     feedback: document.querySelector('.feedback'),
+    feeds: document.querySelector('.feeds'),
+    posts: document.querySelector('.posts'),
   };
 
   const state = {
     form: {
       valid: true,
-      prosessState: 'filling',
+      processState: 'filling',
       processError: null,
       feedback: '',
     },
-    rss: [],
+    rssUrls: [],
     feeds: [],
     posts: [],
   };
 
-  const i18nInstance = i18next.createInstance();
-
-  i18nInstance
+  i18next
+    .createInstance()
     .init({
       lng: 'en',
       debug: true,
@@ -59,26 +62,41 @@ export default () => {
     .then((t) => {
       const watchedState = getWatchedState(state, elements);
 
+      elements.urlInput.addEventListener('input', () => {
+        watchedState.form.processState = 'filling';
+      });
+
       elements.form.addEventListener('submit', (event) => {
         event.preventDefault();
         const formData = new FormData(event.target);
         const url = formData.get('url');
-        const validate = getValidateFunc(watchedState.rss, t);
+        const validate = getValidateFunc(watchedState.rssUrls, t);
         validate({ url })
           .then(({ url: validUrl }) => {
             watchedState.form.feedback = [''];
             watchedState.form.valid = true;
-            watchedState.form.prosessState = 'sending';
+            watchedState.form.processState = 'sending';
             return axios.get(validUrl);
           })
-          .then((response) => {
-            const { data } = response;
-            const { feed, posts } = parseData(data, 'text/xml');
-            // watchedState;
-            elements.urlInput.value = '';
+          .then((res) => {
+            const { data, request } = res;
+            const { feed, items } = parseData(data, 'text/xml');
+            feed.id = feedId;
+            const posts = items.map((item) => ({
+              ...item,
+              id: uniqueId(),
+              feedId,
+            }));
+            feedId += 1;
+console.log(feed)
+            elements.form.reset();
+            elements.form.focus();
+
+            watchedState.form.processState = 'sent';
             watchedState.form.feedback = t('rssSuccessLoaded');
-            // console.log(parsedData);
-            // console.log(uniqueId());
+            watchedState.rssUrls.push(request.responseURL);
+            watchedState.feeds.push(feed);
+            watchedState.posts.push(...posts);
           })
           .catch((error) => {
             console.log(error);
@@ -89,6 +107,8 @@ export default () => {
             }
             if (name === 'AxiosError') {
               watchedState.form.feedback = t('networkError');
+              watchedState.form.processError = error.message;
+              watchedState.form.processState = 'error';
             }
             if (name === 'RssParsingError') {
               watchedState.form.feedback = t(error.message);

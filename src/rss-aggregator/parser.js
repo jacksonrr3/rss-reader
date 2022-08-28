@@ -15,20 +15,18 @@ const extractValuesFromDoc = (doc, props) => {
 
 export default (parsedString, mimeType) => {
   const domParser = new DOMParser();
-  const dataDocument = domParser.parseFromString(parsedString, mimeType);
-  const rss = dataDocument.querySelector('rss');
+  const dataDomDocument = domParser.parseFromString(parsedString, mimeType);
+  const rss = dataDomDocument.querySelector('rss');
   if (!rss) {
     throw new RssParsingError('notRssResource');
   }
-  // console.log(dataDocument);
-  const feed = extractValuesFromDoc(dataDocument, [
+  const feed = extractValuesFromDoc(dataDomDocument, [
     'title',
     'description',
     'link',
   ]);
-  const items = Array.from(dataDocument.querySelectorAll('item')).map(
+  const items = Array.from(dataDomDocument.querySelectorAll('item')).map(
     (item) => extractValuesFromDoc(item, ['title', 'description', 'link']),
   );
-  // console.log(items);
   return { feed, items };
 };
