@@ -104,6 +104,7 @@ export default () => {
             elements.urlInput.value = '';
             elements.form.focus();
 
+            watchedState.form.processError = null;
             watchedState.form.processState = 'sent';
             watchedState.form.feedback = t('rssSuccessLoaded');
             watchedState.rssUrls.push(data.status.url);
@@ -112,6 +113,7 @@ export default () => {
           })
           .catch((error) => {
             const { name } = error;
+            watchedState.form.processError = true;
             if (name === 'ValidationError') {
               watchedState.form.feedback = error.errors.map((err) => t(err));
               watchedState.form.valid = false;

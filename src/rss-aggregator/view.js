@@ -2,9 +2,15 @@ import onChange from 'on-change';
 
 import { createEl } from './utils.js';
 
-const renderFeedback = (el, texts) => {
+const renderFeedback = (el, { form }) => {
+  const { processError, feedback } = form;
   const fb = el;
-  fb.textContent = Array.isArray(texts) ? texts.join(', ') : texts;
+  fb.textContent = Array.isArray(feedback) ? feedback.join(', ') : feedback;
+  if (processError) {
+    fb.classList.add('text-danger');
+  } else {
+    fb.classList.remove('text-danger');
+  }
 };
 
 const renderInputIsValid = (el, isValid) => {
@@ -95,7 +101,7 @@ export default (state, elements) => {
   } = elements;
   const watchedState = onChange(state, (path, value) => {
     if (path === 'form.feedback') {
-      renderFeedback(feedback, value);
+      renderFeedback(feedback, watchedState);
     }
     if (path === 'form.valid') {
       renderInputIsValid(urlInput, value);
