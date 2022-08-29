@@ -1,7 +1,7 @@
 import axios from 'axios';
 import * as yup from 'yup';
 import i18next from 'i18next';
-import { uniqueId } from 'lodash';
+import _, { uniqueId } from 'lodash';
 
 import en from './locales/en.js';
 
@@ -93,6 +93,7 @@ export default () => {
             const { data } = res;
             const { feed, items } = parseData(data.contents, 'text/xml');
             feed.id = feedId;
+            feed.url = data.status.url;
             const posts = items.map((item) => ({
               ...item,
               id: uniqueId(),
@@ -124,5 +125,42 @@ export default () => {
             }
           });
       });
+
+      const checkNewPosts = (feeds, posts) => {
+        const feedPromises = feeds.map((feed) => {
+          const { url, id } = feed;
+          const feedPosts = posts.filter((post) => post.feedId === id);
+          return axios
+            .get(allOriginProxyUrl, {
+              params: {
+                disableCache: true,
+                url,
+              },
+            })
+            .then((res) => {
+              const { data } = res;
+              const { items } = parseData(data.contents, 'text/xml');
+              const newPosts = items
+                .filter((item) => !feedPosts.find((post) => item.title === post.title))
+                .map((post) => ({
+                  ...post,
+                  feedId: feed.id,
+                  id: _.uniqueId(),
+                }));
+              return newPosts;
+            });
+        });
+        Promise.all(feedPromises).then((newPosts) => {
+          const postsToPush = newPosts.flat();
+          if (postsToPush.length) {
+            watchedState.posts.push(...postsToPush);
+          }
+          setTimeout(
+            () => checkNewPosts(watchedState.feeds, watchedState.posts),
+            5000,
+          );
+        });
+      };
+      checkNewPosts(watchedState.feeds, watchedState.posts);
     });
 };
