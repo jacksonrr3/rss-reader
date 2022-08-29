@@ -37,6 +37,11 @@ export default () => {
     feedback: document.querySelector('.feedback'),
     feeds: document.querySelector('.feeds'),
     posts: document.querySelector('.posts'),
+    modal: {
+      modalTitle: document.querySelector('.modal-title'),
+      modalDescription: document.querySelector('.text-break'),
+      modalLink: document.querySelector('.full-article'),
+    },
   };
 
   const state = {
@@ -49,13 +54,13 @@ export default () => {
     rssUrls: [],
     feeds: [],
     posts: [],
+    viewedPostId: null,
   };
 
   i18next
     .createInstance()
     .init({
       lng: 'en',
-      debug: true,
       resources: {
         en,
       },

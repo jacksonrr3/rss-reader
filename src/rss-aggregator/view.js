@@ -32,19 +32,14 @@ const renderFeeds = (container, feeds) => {
   container.replaceChildren(card, ul);
 };
 
-const renderPosts = (container, posts) => {
+const renderPosts = (container, posts, state) => {
   const card = createEl('div', ['card', 'border-0']);
   const cardBody = createEl('div', ['card-body']);
   cardBody.innerHTML = '<h2 class="card-title h4">Посты</h2>';
   card.appendChild(cardBody);
 
   const ul = createEl('ul', ['list-group', 'border-0', 'rounded-0']);
-  const postNodes = posts.map(({
-    title,
-    description,
-    link,
-    id,
-  }) => {
+  const postNodes = posts.map(({ title, link, id }) => {
     const li = createEl('li', [
       'list-group-item',
       'd-flex',
@@ -66,7 +61,10 @@ const renderPosts = (container, posts) => {
     button.dataset.bsToggle = 'modal';
     button.dataset.bsTarget = '#modal';
     button.textContent = 'Просмотр';
-    button.addEventListener('click', () => {});
+    button.addEventListener('click', () => {
+      // eslint-disable-next-line no-param-reassign
+      state.viewedPostId = id;
+    });
 
     li.append(a, button);
     return li;
@@ -76,11 +74,27 @@ const renderPosts = (container, posts) => {
   container.replaceChildren(card, ul);
 };
 
+const renderModal = (el, post) => {
+  if (post) {
+    const { title, description, link } = post;
+    const { modalTitle, modalDescription, modalLink } = el;
+    modalTitle.textContent = title;
+    modalDescription.textContent = description;
+    modalLink.setAttribute('href', link);
+  }
+};
+
 const handelProsessState = () => {};
 
 export default (state, elements) => {
-  const { feedback, urlInput } = elements;
-  return onChange(state, (path, value) => {
+  const {
+    feedback,
+    urlInput,
+    feeds,
+    posts,
+    modal,
+  } = elements;
+  const watchedState = onChange(state, (path, value) => {
     if (path === 'form.feedback') {
       renderFeedback(feedback, value);
     }
@@ -88,13 +102,18 @@ export default (state, elements) => {
       renderInputIsValid(urlInput, value);
     }
     if (path === 'form.prosessState') {
-      handelProsessState(elements, value);
+      handelProsessState();
     }
     if (path === 'feeds') {
-      renderFeeds(elements.feeds, value);
+      renderFeeds(feeds, value);
     }
     if (path === 'posts') {
-      renderPosts(elements.posts, value);
+      renderPosts(posts, value, watchedState);
+    }
+    if (path === 'viewedPostId') {
+      const post = value && watchedState.posts.find(({ id }) => id === value);
+      renderModal(modal, post);
     }
   });
+  return watchedState;
 };
