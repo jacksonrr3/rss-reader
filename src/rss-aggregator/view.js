@@ -32,14 +32,14 @@ const renderFeeds = (container, feeds) => {
   container.replaceChildren(card, ul);
 };
 
-const renderPosts = (container, posts, state) => {
+const renderPosts = (container, state) => {
   const card = createEl('div', ['card', 'border-0']);
   const cardBody = createEl('div', ['card-body']);
   cardBody.innerHTML = '<h2 class="card-title h4">Посты</h2>';
   card.appendChild(cardBody);
 
   const ul = createEl('ul', ['list-group', 'border-0', 'rounded-0']);
-  const postNodes = posts.map(({ title, link, id }) => {
+  const postNodes = state.posts.map(({ title, link, id }) => {
     const li = createEl('li', [
       'list-group-item',
       'd-flex',
@@ -48,7 +48,8 @@ const renderPosts = (container, posts, state) => {
       'border-0',
       'border-end-0',
     ]);
-    const a = createEl('a', ['fw-bold']);
+    const className = state.viewedPosts[id] ? 'fw-normal' : 'fw-bold';
+    const a = createEl('a', [className]);
     a.setAttribute('href', link);
     a.setAttribute('target', '_blank');
     a.setAttribute('rel', 'noopener norefferer');
@@ -64,6 +65,8 @@ const renderPosts = (container, posts, state) => {
     button.addEventListener('click', () => {
       // eslint-disable-next-line no-param-reassign
       state.viewedPostId = id;
+      // eslint-disable-next-line no-param-reassign
+      state.viewedPosts = { ...state.viewedPosts, [id]: true };
     });
 
     li.append(a, button);
@@ -88,11 +91,7 @@ const handelProsessState = () => {};
 
 export default (state, elements) => {
   const {
-    feedback,
-    urlInput,
-    feeds,
-    posts,
-    modal,
+    feedback, urlInput, feeds, posts, modal,
   } = elements;
   const watchedState = onChange(state, (path, value) => {
     if (path === 'form.feedback') {
@@ -107,8 +106,8 @@ export default (state, elements) => {
     if (path === 'feeds') {
       renderFeeds(feeds, value);
     }
-    if (path === 'posts') {
-      renderPosts(posts, value, watchedState);
+    if (path === 'posts' || path === 'viewedPosts') {
+      renderPosts(posts, watchedState);
     }
     if (path === 'viewedPostId') {
       const post = value && watchedState.posts.find(({ id }) => id === value);

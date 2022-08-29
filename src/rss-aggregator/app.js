@@ -55,6 +55,7 @@ export default () => {
     feeds: [],
     posts: [],
     viewedPostId: null,
+    viewedPosts: {},
   };
 
   i18next
