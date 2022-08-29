@@ -101,7 +101,7 @@ export default () => {
               feedId,
             }));
             feedId += 1;
-            elements.form.reset();
+            elements.urlInput.value = '';
             elements.form.focus();
 
             watchedState.form.processState = 'sent';

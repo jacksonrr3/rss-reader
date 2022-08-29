@@ -4,7 +4,7 @@ import { createEl } from './utils.js';
 
 const renderFeedback = (el, texts) => {
   const fb = el;
-  fb.innerText = Array.isArray(texts) ? texts.join(', ') : texts;
+  fb.textContent = Array.isArray(texts) ? texts.join(', ') : texts;
 };
 
 const renderInputIsValid = (el, isValid) => {
