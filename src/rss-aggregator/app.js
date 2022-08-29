@@ -1,9 +1,15 @@
+import axios from 'axios';
 import * as yup from 'yup';
 import i18next from 'i18next';
+import { uniqueId } from 'lodash';
 
 import en from './locales/en.js';
 
 import getWatchedState from './view.js';
+import parseData from './parser.js';
+
+const allOriginProxyUrl = 'https://allorigins.hexlet.app/get';
+let feedId = 0;
 
 yup.setLocale({
   mixed: {
@@ -16,7 +22,8 @@ yup.setLocale({
 
 const getValidateFunc = (rssLinks) => (url) => {
   const schema = yup.object().shape({
-    url: yup.string()
+    url: yup
+      .string()
       .url()
       .notOneOf(rssLinks),
   });
@@ -28,24 +35,32 @@ export default () => {
     form: document.querySelector('.rss-form'),
     urlInput: document.getElementById('url-input'),
     feedback: document.querySelector('.feedback'),
+    feeds: document.querySelector('.feeds'),
+    posts: document.querySelector('.posts'),
+    modal: {
+      modalTitle: document.querySelector('.modal-title'),
+      modalDescription: document.querySelector('.text-break'),
+      modalLink: document.querySelector('.full-article'),
+    },
   };
 
   const state = {
     form: {
       valid: true,
-      prosessState: 'filling',
+      processState: 'filling',
       processError: null,
       feedback: '',
     },
-    rss: [],
+    rssUrls: [],
+    feeds: [],
+    posts: [],
+    viewedPostId: null,
   };
 
-  const i18nInstance = i18next.createInstance();
-
-  i18nInstance
+  i18next
+    .createInstance()
     .init({
       lng: 'en',
-      debug: true,
       resources: {
         en,
       },
@@ -53,22 +68,60 @@ export default () => {
     .then((t) => {
       const watchedState = getWatchedState(state, elements);
 
+      elements.urlInput.addEventListener('input', () => {
+        watchedState.form.processState = 'filling';
+      });
+
       elements.form.addEventListener('submit', (event) => {
         event.preventDefault();
         const formData = new FormData(event.target);
         const url = formData.get('url');
-        const validate = getValidateFunc(watchedState.rss, t);
+        const validate = getValidateFunc(watchedState.rssUrls, t);
         validate({ url })
-          .then(({ rss: validUrl }) => {
-            console.log(validUrl);
+          .then(({ url: validUrl }) => {
             watchedState.form.feedback = [''];
             watchedState.form.valid = true;
-
-            elements.urlInput.value = '';
+            watchedState.form.processState = 'sending';
+            return axios.get(allOriginProxyUrl, {
+              params: {
+                disableCache: true,
+                url: validUrl,
+              },
+            });
           })
-          .catch(({ errors }) => {
-            watchedState.form.feedback = errors.map((err) => t(err));
-            watchedState.form.valid = false;
+          .then((res) => {
+            const { data } = res;
+            const { feed, items } = parseData(data.contents, 'text/xml');
+            feed.id = feedId;
+            const posts = items.map((item) => ({
+              ...item,
+              id: uniqueId(),
+              feedId,
+            }));
+            feedId += 1;
+            elements.form.reset();
+            elements.form.focus();
+
+            watchedState.form.processState = 'sent';
+            watchedState.form.feedback = t('rssSuccessLoaded');
+            watchedState.rssUrls.push(data.status.url);
+            watchedState.feeds.push(feed);
+            watchedState.posts.push(...posts);
+          })
+          .catch((error) => {
+            const { name } = error;
+            if (name === 'ValidationError') {
+              watchedState.form.feedback = error.errors.map((err) => t(err));
+              watchedState.form.valid = false;
+            }
+            if (name === 'AxiosError') {
+              watchedState.form.feedback = t('networkError');
+              watchedState.form.processError = error.message;
+              watchedState.form.processState = 'error';
+            }
+            if (name === 'RssParsingError') {
+              watchedState.form.feedback = t(error.message);
+            }
           });
       });
     });
