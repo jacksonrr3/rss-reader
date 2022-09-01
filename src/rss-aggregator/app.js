@@ -9,6 +9,7 @@ import getWatchedState from './view.js';
 import parseData from './parser.js';
 
 let feedId = 0;
+let currentTimerId = null;
 
 export default (lng) => {
   i18next
@@ -49,12 +50,45 @@ export default (lng) => {
 
       const watchedState = getWatchedState(state, elements);
 
+      const checkNewPosts = (feeds, posts) => {
+        const feedPromises = feeds.map((feed) => {
+          const { url, id } = feed;
+          const feedPosts = posts.filter((post) => post.feedId === id);
+          return getDataFromProxy(url).then((res) => {
+            const { data } = res;
+            const { items } = parseData(data.contents, 'text/xml');
+            const newPosts = items
+              .filter(
+                (item) => !feedPosts.find((post) => item.title === post.title),
+              )
+              .map((post) => ({
+                ...post,
+                feedId: feed.id,
+                id: uniqueId(),
+              }));
+            return newPosts;
+          });
+        });
+
+        Promise.all(feedPromises).then((newPosts) => {
+          const postsToPush = newPosts.flat();
+          if (postsToPush.length) {
+            watchedState.posts.push(...postsToPush);
+          }
+          currentTimerId = setTimeout(
+            () => checkNewPosts(watchedState.feeds, watchedState.posts),
+            5000,
+          );
+        });
+      };
+
       elements.urlInput.addEventListener('input', () => {
         watchedState.form.processState = 'filling';
       });
 
-      elements.form.addEventListener('submit', (event) => {
+      elements.form.addEventListener('submit', async (event) => {
         event.preventDefault();
+        clearTimeout(currentTimerId);
         const formData = new FormData(event.target);
         const url = formData.get('url');
         validate(watchedState.rssUrls, { url })
@@ -101,39 +135,8 @@ export default (lng) => {
               watchedState.form.feedback = t(error.message);
             }
           });
+
+        checkNewPosts(watchedState.feeds, watchedState.posts);
       });
-
-      const checkNewPosts = (feeds, posts) => {
-        const feedPromises = feeds.map((feed) => {
-          const { url, id } = feed;
-          const feedPosts = posts.filter((post) => post.feedId === id);
-          return getDataFromProxy(url).then((res) => {
-            const { data } = res;
-            const { items } = parseData(data.contents, 'text/xml');
-            const newPosts = items
-              .filter(
-                (item) => !feedPosts.find((post) => item.title === post.title),
-              )
-              .map((post) => ({
-                ...post,
-                feedId: feed.id,
-                id: uniqueId(),
-              }));
-            return newPosts;
-          });
-        });
-
-        Promise.all(feedPromises).then((newPosts) => {
-          const postsToPush = newPosts.flat();
-          if (postsToPush.length) {
-            watchedState.posts.push(...postsToPush);
-          }
-          setTimeout(
-            () => checkNewPosts(watchedState.feeds, watchedState.posts),
-            5000,
-          );
-        });
-      };
-      checkNewPosts(watchedState.feeds, watchedState.posts);
     });
 };
