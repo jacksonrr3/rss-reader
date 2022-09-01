@@ -1,72 +1,52 @@
-import axios from 'axios';
-import * as yup from 'yup';
 import i18next from 'i18next';
-import _, { uniqueId } from 'lodash';
+import { uniqueId } from 'lodash';
 
 import en from './locales/en.js';
 
+import validate from './validate.js';
+import { getDataFromProxy } from './utils.js';
 import getWatchedState from './view.js';
 import parseData from './parser.js';
 
-const allOriginProxyUrl = 'https://allorigins.hexlet.app/get';
 let feedId = 0;
 
-yup.setLocale({
-  mixed: {
-    notOneOf: 'validateErrors.rssIsExist',
-  },
-  string: {
-    url: 'validateErrors.invalidUrl',
-  },
-});
-
-const getValidateFunc = (rssLinks) => (url) => {
-  const schema = yup.object().shape({
-    url: yup
-      .string()
-      .url()
-      .notOneOf(rssLinks),
-  });
-  return schema.validate(url);
-};
-
-export default () => {
-  const elements = {
-    form: document.querySelector('.rss-form'),
-    urlInput: document.getElementById('url-input'),
-    feedback: document.querySelector('.feedback'),
-    feeds: document.querySelector('.feeds'),
-    posts: document.querySelector('.posts'),
-    modal: {
-      modalTitle: document.querySelector('.modal-title'),
-      modalDescription: document.querySelector('.text-break'),
-      modalLink: document.querySelector('.full-article'),
-    },
-  };
-
-  const state = {
-    form: {
-      valid: true,
-      processState: 'filling',
-      processError: null,
-      feedback: '',
-    },
-    rssUrls: [],
-    feeds: [],
-    posts: [],
-    viewedPostId: null,
-    viewedPosts: {},
-  };
-
+export default (lng) => {
   i18next
     .createInstance()
     .init({
-      lng: 'en',
+      lng,
       resources: {
         en,
       },
     })
     .then((t) => {
+      const elements = {
+        form: document.querySelector('.rss-form'),
+        urlInput: document.getElementById('url-input'),
+        feedback: document.querySelector('.feedback'),
+        feeds: document.querySelector('.feeds'),
+        posts: document.querySelector('.posts'),
+        modal: {
+          modalTitle: document.querySelector('.modal-title'),
+          modalDescription: document.querySelector('.text-break'),
+          modalLink: document.querySelector('.full-article'),
+        },
+      };
+
+      const state = {
+        form: {
+          valid: true,
+          processState: 'filling',
+          processError: null,
+          feedback: '',
+        },
+        rssUrls: [],
+        feeds: [],
+        posts: [],
+        viewedPostId: null,
+        viewedPosts: {},
+      };
+
       const watchedState = getWatchedState(state, elements);
 
       elements.urlInput.addEventListener('input', () => {
@@ -77,18 +57,12 @@ export default () => {
         event.preventDefault();
         const formData = new FormData(event.target);
         const url = formData.get('url');
-        const validate = getValidateFunc(watchedState.rssUrls, t);
-        validate({ url })
+        validate(watchedState.rssUrls, { url })
           .then(({ url: validUrl }) => {
             watchedState.form.feedback = [''];
             watchedState.form.valid = true;
             watchedState.form.processState = 'sending';
-            return axios.get(allOriginProxyUrl, {
-              params: {
-                disableCache: true,
-                url: validUrl,
-              },
-            });
+            return getDataFromProxy(validUrl);
           })
           .then((res) => {
             const { data } = res;
@@ -133,26 +107,22 @@ export default () => {
         const feedPromises = feeds.map((feed) => {
           const { url, id } = feed;
           const feedPosts = posts.filter((post) => post.feedId === id);
-          return axios
-            .get(allOriginProxyUrl, {
-              params: {
-                disableCache: true,
-                url,
-              },
-            })
-            .then((res) => {
-              const { data } = res;
-              const { items } = parseData(data.contents, 'text/xml');
-              const newPosts = items
-                .filter((item) => !feedPosts.find((post) => item.title === post.title))
-                .map((post) => ({
-                  ...post,
-                  feedId: feed.id,
-                  id: _.uniqueId(),
-                }));
-              return newPosts;
-            });
+          return getDataFromProxy(url).then((res) => {
+            const { data } = res;
+            const { items } = parseData(data.contents, 'text/xml');
+            const newPosts = items
+              .filter(
+                (item) => !feedPosts.find((post) => item.title === post.title),
+              )
+              .map((post) => ({
+                ...post,
+                feedId: feed.id,
+                id: uniqueId(),
+              }));
+            return newPosts;
+          });
         });
+
         Promise.all(feedPromises).then((newPosts) => {
           const postsToPush = newPosts.flat();
           if (postsToPush.length) {
