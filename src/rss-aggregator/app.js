@@ -1,7 +1,7 @@
 import i18next from 'i18next';
 import { uniqueId } from 'lodash';
 
-import ru from './locales/en.js';
+import ru from './locales/ru.js';
 
 import validate from './validate.js';
 import { getDataFromProxy } from './utils.js';
