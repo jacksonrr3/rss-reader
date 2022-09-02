@@ -1,7 +1,7 @@
 import i18next from 'i18next';
 import { uniqueId } from 'lodash';
 
-import en from './locales/en.js';
+import ru from './locales/en.js';
 
 import validate from './validate.js';
 import { getDataFromProxy } from './utils.js';
@@ -17,7 +17,7 @@ export default async (lng) => {
     .init({
       lng,
       resources: {
-        en,
+        ru,
       },
     })
     .then((t) => {
