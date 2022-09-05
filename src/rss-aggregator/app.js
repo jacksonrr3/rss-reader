@@ -102,7 +102,7 @@ export default async (lng) => {
             const { data } = res;
             const { feed, items } = parseData(data.contents, 'text/xml');
             feed.id = feedId;
-            feed.url = data.status.url;
+            feed.url = url;
             const posts = items.map((item) => ({
               ...item,
               id: uniqueId(),
@@ -123,17 +123,21 @@ export default async (lng) => {
           .catch((error) => {
             const { name } = error;
             watchedState.form.processError = true;
-            if (name === 'ValidationError') {
-              watchedState.form.feedback = error.errors.map((err) => t(err));
-              watchedState.form.valid = false;
-            }
-            if (name === 'AxiosError') {
-              watchedState.form.feedback = t('networkError');
-              watchedState.form.processError = error.message;
-              watchedState.form.processState = 'error';
-            }
-            if (name === 'RssParsingError') {
-              watchedState.form.feedback = t(error.message);
+            switch (name) {
+              case 'ValidationError':
+                watchedState.form.feedback = error.errors.map((err) => t(err));
+                watchedState.form.valid = false;
+                break;
+              case 'AxiosError':
+                watchedState.form.feedback = t('networkError');
+                watchedState.form.processError = error.message;
+                watchedState.form.processState = 'error';
+                break;
+              case 'RssParsingError':
+                watchedState.form.feedback = t(error.message);
+                break;
+              default:
+                watchedState.form.feedback = t(error.message);
             }
           });
       });
