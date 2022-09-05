@@ -115,7 +115,7 @@ export default async (lng) => {
             watchedState.form.processError = null;
             watchedState.form.processState = 'sent';
             watchedState.form.feedback = t('rssSuccessLoaded');
-            watchedState.rssUrls.push(data.status.url);
+            watchedState.rssUrls.push(url);
             watchedState.feeds.push(feed);
             watchedState.posts.push(...posts);
             checkNewPosts(watchedState.feeds, watchedState.posts);
