@@ -16,8 +16,8 @@ const renderError = (elements, error) => {
   }
 };
 
-const renderInputIsValid = (el, isValid) => {
-  const { classList } = el;
+const renderInputIsValid = ({ urlInput }, isValid) => {
+  const { classList } = urlInput;
   if (isValid) {
     classList.remove('is-invalid');
     return;
@@ -25,7 +25,7 @@ const renderInputIsValid = (el, isValid) => {
   classList.add('is-invalid');
 };
 
-const renderFeeds = (container, feeds) => {
+const renderFeeds = ({ feedsContainer }, feeds) => {
   const card = createEl('div', ['card', 'border-0']);
   const cardBody = createEl('div', ['card-body']);
   cardBody.innerHTML = '<h2 class="card-title h4">Фиды</h2>';
@@ -38,10 +38,10 @@ const renderFeeds = (container, feeds) => {
     return li;
   });
   ul.append(...feedNodes);
-  container.replaceChildren(card, ul);
+  feedsContainer.replaceChildren(card, ul);
 };
 
-const renderPosts = (container, state) => {
+const renderPosts = ({ postsContainer }, state) => {
   const card = createEl('div', ['card', 'border-0']);
   const cardBody = createEl('div', ['card-body']);
   cardBody.innerHTML = '<h2 class="card-title h4">Посты</h2>';
@@ -83,13 +83,13 @@ const renderPosts = (container, state) => {
   });
 
   ul.append(...postNodes);
-  container.replaceChildren(card, ul);
+  postsContainer.replaceChildren(card, ul);
 };
 
-const renderModal = (el, post) => {
+const renderModal = ({ modal }, post) => {
   if (post) {
     const { title, description, link } = post;
-    const { modalTitle, modalDescription, modalLink } = el;
+    const { modalTitle, modalDescription, modalLink } = modal;
     modalTitle.textContent = title;
     modalDescription.textContent = description;
     modalLink.setAttribute('href', link);
@@ -99,29 +99,39 @@ const renderModal = (el, post) => {
 const handelProsessState = () => {};
 
 export default (state, elements) => {
-  const { urlInput, feeds, posts, modal } = elements;
   const watchedState = onChange(state, (path, value) => {
-    if (path === 'form.feedback') {
-      renderFeedback(elements, value);
-    }
-    if (path === 'form.processError') {
-      renderError(elements, value);
-    }
-    if (path === 'form.valid') {
-      renderInputIsValid(urlInput, value);
-    }
-    if (path === 'form.prosessState') {
-      handelProsessState();
-    }
-    if (path === 'feeds') {
-      renderFeeds(feeds, value);
-    }
-    if (path === 'posts' || path === 'viewedPosts') {
-      renderPosts(posts, watchedState);
-    }
-    if (path === 'viewedPostId') {
-      const post = value && watchedState.posts.find(({ id }) => id === value);
-      renderModal(modal, post);
+    switch (path) {
+      case 'form.feedback':
+        renderFeedback(elements, value);
+        break;
+      case 'form.processError':
+        renderError(elements, value);
+        break;
+      case 'form.valid':
+        renderInputIsValid(elements, value);
+        break;
+      case 'form.processState':
+        handelProsessState();
+        break;
+      case 'feeds':
+        renderFeeds(elements, value);
+        break;
+      case 'posts':
+        renderPosts(elements, watchedState);
+        break;
+      case 'viewedPosts':
+        renderPosts(elements, watchedState);
+        break;
+      case 'viewedPostId':
+        // eslint-disable-next-line no-case-declarations
+        const post = value && watchedState.posts.find(({ id }) => id === value);
+        renderModal(elements, post);
+        break;
+      case 'rssUrls':
+        break;
+      // eslint-disable-next-line no-fallthrough
+      default:
+        throw new Error(`Unknown state path: ${path}`);
     }
   });
   return watchedState;

@@ -25,8 +25,8 @@ export default async (lng) => {
         form: document.querySelector('.rss-form'),
         urlInput: document.getElementById('url-input'),
         feedback: document.querySelector('.feedback'),
-        feeds: document.querySelector('.feeds'),
-        posts: document.querySelector('.posts'),
+        feedsContainer: document.querySelector('.feeds'),
+        postsContainer: document.querySelector('.posts'),
         modal: {
           modalTitle: document.querySelector('.modal-title'),
           modalDescription: document.querySelector('.text-break'),
