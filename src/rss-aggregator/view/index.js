@@ -6,8 +6,7 @@ import renderInputIsValid from './renderInputIsValid.js';
 import renderFeeds from './renderFeeds.js';
 import renderPosts from './renderPosts.js';
 import renderModal from './renderModal.js';
-
-const handelProsessState = () => {};
+import handelProcessState from './handelProcessState.js';
 
 export default (state, elements) => {
   const watchedState = onChange(state, (path, value) => {
@@ -22,7 +21,7 @@ export default (state, elements) => {
         renderInputIsValid(elements, value);
         break;
       case 'form.processState':
-        handelProsessState(elements, value);
+        handelProcessState(elements, value);
         break;
       case 'feeds':
         renderFeeds(elements, value);

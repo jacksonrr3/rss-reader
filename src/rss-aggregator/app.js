@@ -11,6 +11,19 @@ import parseData from './parser.js';
 let feedId = 0;
 let currentTimerId = null;
 
+const elements = {
+  form: document.querySelector('.rss-form'),
+  urlInput: document.getElementById('url-input'),
+  feedback: document.querySelector('.feedback'),
+  feedsContainer: document.querySelector('.feeds'),
+  postsContainer: document.querySelector('.posts'),
+  modal: {
+    modalTitle: document.querySelector('.modal-title'),
+    modalDescription: document.querySelector('.text-break'),
+    modalLink: document.querySelector('.full-article'),
+  },
+};
+
 export default async (lng) => {
   await i18next
     .createInstance()
@@ -21,19 +34,6 @@ export default async (lng) => {
       },
     })
     .then((t) => {
-      const elements = {
-        form: document.querySelector('.rss-form'),
-        urlInput: document.getElementById('url-input'),
-        feedback: document.querySelector('.feedback'),
-        feedsContainer: document.querySelector('.feeds'),
-        postsContainer: document.querySelector('.posts'),
-        modal: {
-          modalTitle: document.querySelector('.modal-title'),
-          modalDescription: document.querySelector('.text-break'),
-          modalLink: document.querySelector('.full-article'),
-        },
-      };
-
       const state = {
         form: {
           valid: true,
@@ -83,7 +83,9 @@ export default async (lng) => {
       };
 
       elements.urlInput.addEventListener('input', () => {
-        watchedState.form.processState = 'filling';
+        if (watchedState.form.processState !== 'filling') {
+          watchedState.form.processState = 'filling';
+        }
       });
 
       elements.form.addEventListener('submit', async (event) => {
@@ -109,8 +111,6 @@ export default async (lng) => {
               feedId,
             }));
             feedId += 1;
-            elements.urlInput.value = '';
-            elements.form.focus();
 
             watchedState.form.processError = null;
             watchedState.form.processState = 'sent';
