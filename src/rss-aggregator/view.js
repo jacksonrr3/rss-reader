@@ -2,14 +2,17 @@ import onChange from 'on-change';
 
 import { createEl } from './utils.js';
 
-const renderFeedback = (el, { form }) => {
-  const { processError, feedback } = form;
-  const fb = el;
-  fb.textContent = Array.isArray(feedback) ? feedback.join(', ') : feedback;
-  if (processError) {
-    fb.classList.add('text-danger');
+const renderFeedback = (elements, text) => {
+  const { feedback } = elements;
+  feedback.textContent = Array.isArray(text) ? text.join(', ') : text;
+};
+
+const renderError = (elements, error) => {
+  const { feedback } = elements;
+  if (error) {
+    feedback.classList.add('text-danger');
   } else {
-    fb.classList.remove('text-danger');
+    feedback.classList.remove('text-danger');
   }
 };
 
@@ -96,12 +99,13 @@ const renderModal = (el, post) => {
 const handelProsessState = () => {};
 
 export default (state, elements) => {
-  const {
-    feedback, urlInput, feeds, posts, modal,
-  } = elements;
+  const { urlInput, feeds, posts, modal } = elements;
   const watchedState = onChange(state, (path, value) => {
     if (path === 'form.feedback') {
-      renderFeedback(feedback, watchedState);
+      renderFeedback(elements, value);
+    }
+    if (path === 'form.processError') {
+      renderError(elements, value);
     }
     if (path === 'form.valid') {
       renderInputIsValid(urlInput, value);
