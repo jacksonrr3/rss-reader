@@ -3,10 +3,10 @@ import { uniqueId } from 'lodash';
 
 import ru from './locales/ru.js';
 
-import validate from './validate.js';
-import { getDataFromProxy } from './utils.js';
+import validate from './utils/validate.js';
+import getDataFromProxy from './utils/getDataFromProxy.js';
+import parseData from './utils/parser.js';
 import getWatchedState from './view/index.js';
-import parseData from './parser.js';
 
 let feedId = 0;
 let currentTimerId = null;

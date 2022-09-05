@@ -1,14 +1,14 @@
-import { createEl } from '../utils.js';
+import createDomElement from '../utils/createDomElement.js';
 
 export default ({ postsContainer }, state) => {
-  const card = createEl('div', ['card', 'border-0']);
-  const cardBody = createEl('div', ['card-body']);
+  const card = createDomElement('div', ['card', 'border-0']);
+  const cardBody = createDomElement('div', ['card-body']);
   cardBody.innerHTML = '<h2 class="card-title h4">Посты</h2>';
   card.appendChild(cardBody);
 
-  const ul = createEl('ul', ['list-group', 'border-0', 'rounded-0']);
+  const ul = createDomElement('ul', ['list-group', 'border-0', 'rounded-0']);
   const postNodes = state.posts.map(({ title, link, id }) => {
-    const li = createEl('li', [
+    const li = createDomElement('li', [
       'list-group-item',
       'd-flex',
       'justify-content-between',
@@ -17,14 +17,18 @@ export default ({ postsContainer }, state) => {
       'border-end-0',
     ]);
     const className = state.viewedPosts[id] ? 'fw-normal' : 'fw-bold';
-    const a = createEl('a', [className]);
+    const a = createDomElement('a', [className]);
     a.setAttribute('href', link);
     a.setAttribute('target', '_blank');
     a.setAttribute('rel', 'noopener norefferer');
     a.dataset.id = id;
     a.textContent = title;
 
-    const button = createEl('button', ['btn', 'btn-outline-primary', 'btn-sm']);
+    const button = createDomElement('button', [
+      'btn',
+      'btn-outline-primary',
+      'btn-sm',
+    ]);
     button.setAttribute('type', 'button');
     button.dataset.id = id;
     button.dataset.bsToggle = 'modal';
