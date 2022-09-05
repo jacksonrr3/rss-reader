@@ -2,7 +2,7 @@ import onChange from 'on-change';
 
 import renderError from './renderError.js';
 import renderFeedback from './renderFeedback.js';
-import renderInputIsValid from './renderInputIsValid.js';
+import renderInput from './renderInput.js';
 import renderFeeds from './renderFeeds.js';
 import renderPosts from './renderPosts.js';
 import renderModal from './renderModal.js';
@@ -17,11 +17,11 @@ export default (state, elements) => {
       case 'form.processError':
         renderError(elements, value);
         break;
-      case 'form.valid':
-        renderInputIsValid(elements, value);
-        break;
       case 'form.processState':
         handelProcessState(elements, value);
+        break;
+      case 'form.valid':
+        renderInput(elements, { isValid: value });
         break;
       case 'feeds':
         renderFeeds(elements, value);

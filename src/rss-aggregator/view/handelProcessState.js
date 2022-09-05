@@ -2,6 +2,7 @@ export default (elements, processState) => {
   const { urlInput, form } = elements;
   switch (processState) {
     case 'filling':
+      break;
     case 'sent':
       urlInput.disabled = false;
       urlInput.value = '';
