@@ -5,7 +5,7 @@ import ru from './locales/ru.js';
 
 import validate from './validate.js';
 import { getDataFromProxy } from './utils.js';
-import getWatchedState from './view.js';
+import getWatchedState from './view/index.js';
 import parseData from './parser.js';
 
 let feedId = 0;
@@ -53,21 +53,21 @@ export default async (lng) => {
       const checkNewPosts = (feeds, posts) => {
         const feedPromises = feeds.map((feed) => {
           const { url, id } = feed;
-          const feedPosts = posts.filter((post) => post.feedId === id);
-          return getDataFromProxy(url).then((res) => {
-            const { data } = res;
-            const { items } = parseData(data.contents, 'text/xml');
-            const newPosts = items
-              .filter(
-                (item) => !feedPosts.find((post) => item.title === post.title),
-              )
-              .map((post) => ({
-                ...post,
-                feedId: feed.id,
-                id: uniqueId(),
-              }));
-            return newPosts;
-          });
+          const currentFeedPosts = posts.filter((post) => post.feedId === id);
+          return getDataFromProxy(url)
+            .then(({ data }) => {
+              const { items } = parseData(data.contents, 'text/xml');
+              const newPosts = items
+                .filter(
+                  (item) => !currentFeedPosts.find((post) => item.title === post.title),
+                )
+                .map((post) => ({
+                  ...post,
+                  feedId: feed.id,
+                  id: uniqueId(),
+                }));
+              return newPosts;
+            });
         });
 
         Promise.all(feedPromises).then((newPosts) => {
