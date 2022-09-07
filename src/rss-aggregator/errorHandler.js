@@ -1,8 +1,7 @@
 export default (state, translator) => (error) => {
-  const { name } = error;
   const { form } = state;
   form.processError = true;
-  switch (name) {
+  switch (error.name) {
     case 'ValidationError':
       form.feedback = error.errors.map((err) => translator(err));
       form.valid = false;

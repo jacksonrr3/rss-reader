@@ -55,19 +55,17 @@ export default async (lng) => {
         }
       });
 
-      elements.form.addEventListener('submit', async (event) => {
+      elements.form.addEventListener('submit', (event) => {
         event.preventDefault();
-        const formData = new FormData(event.target);
-        const url = formData.get('url');
+        const url = new FormData(event.target).get('url');
         validate(watchedState.rssUrls, { url })
           .then(({ url: validUrl }) => {
-            watchedState.form.feedback = [''];
+            watchedState.form.feedback = '';
             watchedState.form.valid = true;
             watchedState.form.processState = 'sending';
             return getDataFromProxy(validUrl);
           })
-          .then((res) => {
-            const { data } = res;
+          .then(({ data }) => {
             const { feed, items } = parseData(data.contents, 'text/xml');
             feed.id = getFeedId();
             feed.url = url;
@@ -83,6 +81,7 @@ export default async (lng) => {
             watchedState.rssUrls.push(url);
             watchedState.feeds.push(feed);
             watchedState.posts.push(...posts);
+
             checkNewPosts(watchedState.feeds, watchedState.posts);
           })
           .catch(errorHandler(watchedState, t));
