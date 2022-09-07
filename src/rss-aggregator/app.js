@@ -6,9 +6,9 @@ import ru from './locales/ru.js';
 import validate from './utils/validate.js';
 import getDataFromProxy from './utils/getDataFromProxy.js';
 import parseData from './utils/parser.js';
+import getFeedId from './utils/getFeedId.js';
 import getWatchedState from './view/index.js';
 
-let feedId = 0;
 let currentTimerId = null;
 
 export default async (lng) => {
@@ -102,14 +102,13 @@ export default async (lng) => {
           .then((res) => {
             const { data } = res;
             const { feed, items } = parseData(data.contents, 'text/xml');
-            feed.id = feedId;
+            feed.id = getFeedId();
             feed.url = url;
             const posts = items.map((item) => ({
               ...item,
               id: uniqueId(),
-              feedId,
+              feedId: feed.id,
             }));
-            feedId += 1;
 
             watchedState.form.processError = null;
             watchedState.form.processState = 'sent';
