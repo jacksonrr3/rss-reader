@@ -11,19 +11,6 @@ import getWatchedState from './view/index.js';
 let feedId = 0;
 let currentTimerId = null;
 
-const elements = {
-  form: document.querySelector('.rss-form'),
-  urlInput: document.getElementById('url-input'),
-  feedback: document.querySelector('.feedback'),
-  feedsContainer: document.querySelector('.feeds'),
-  postsContainer: document.querySelector('.posts'),
-  modal: {
-    modalTitle: document.querySelector('.modal-title'),
-    modalDescription: document.querySelector('.text-break'),
-    modalLink: document.querySelector('.full-article'),
-  },
-};
-
 export default async (lng) => {
   await i18next
     .createInstance()
@@ -34,6 +21,19 @@ export default async (lng) => {
       },
     })
     .then((t) => {
+      const elements = {
+        form: document.querySelector('.rss-form'),
+        urlInput: document.getElementById('url-input'),
+        feedback: document.querySelector('.feedback'),
+        feedsContainer: document.querySelector('.feeds'),
+        postsContainer: document.querySelector('.posts'),
+        modal: {
+          modalTitle: document.querySelector('.modal-title'),
+          modalDescription: document.querySelector('.text-break'),
+          modalLink: document.querySelector('.full-article'),
+        },
+      };
+
       const state = {
         form: {
           valid: true,
@@ -54,20 +54,19 @@ export default async (lng) => {
         const feedPromises = feeds.map((feed) => {
           const { url, id } = feed;
           const currentFeedPosts = posts.filter((post) => post.feedId === id);
-          return getDataFromProxy(url)
-            .then(({ data }) => {
-              const { items } = parseData(data.contents, 'text/xml');
-              const newPosts = items
-                .filter(
-                  (item) => !currentFeedPosts.find((post) => item.title === post.title),
-                )
-                .map((post) => ({
-                  ...post,
-                  feedId: feed.id,
-                  id: uniqueId(),
-                }));
-              return newPosts;
-            });
+          return getDataFromProxy(url).then(({ data }) => {
+            const { items } = parseData(data.contents, 'text/xml');
+            const newPosts = items
+              .filter(
+                (item) => !currentFeedPosts.find((post) => item.title === post.title),
+              )
+              .map((post) => ({
+                ...post,
+                feedId: feed.id,
+                id: uniqueId(),
+              }));
+            return newPosts;
+          });
         });
 
         Promise.all(feedPromises).then((newPosts) => {
