@@ -7,9 +7,9 @@ import validate from './utils/validate.js';
 import getDataFromProxy from './utils/getDataFromProxy.js';
 import parseData from './utils/parser.js';
 import getFeedId from './utils/getFeedId.js';
+import { checkNewPosts } from './utils/checkNewPosts.js';
 import getWatchedState from './view/index.js';
-
-let currentTimerId = null;
+import errorHandler from './errorHandler.js';
 
 export default async (lng) => {
   await i18next
@@ -47,39 +47,7 @@ export default async (lng) => {
         viewedPostId: null,
         viewedPosts: {},
       };
-
       const watchedState = getWatchedState(state, elements);
-
-      const checkNewPosts = (feeds, posts) => {
-        const feedPromises = feeds.map((feed) => {
-          const { url, id } = feed;
-          const currentFeedPosts = posts.filter((post) => post.feedId === id);
-          return getDataFromProxy(url).then(({ data }) => {
-            const { items } = parseData(data.contents, 'text/xml');
-            const newPosts = items
-              .filter(
-                (item) => !currentFeedPosts.find((post) => item.title === post.title),
-              )
-              .map((post) => ({
-                ...post,
-                feedId: feed.id,
-                id: uniqueId(),
-              }));
-            return newPosts;
-          });
-        });
-
-        Promise.all(feedPromises).then((newPosts) => {
-          const postsToPush = newPosts.flat();
-          if (postsToPush.length) {
-            watchedState.posts.push(...postsToPush);
-          }
-          currentTimerId = setTimeout(
-            () => checkNewPosts(watchedState.feeds, watchedState.posts),
-            5000,
-          );
-        });
-      };
 
       elements.urlInput.addEventListener('input', () => {
         if (watchedState.form.processState !== 'filling') {
@@ -89,7 +57,6 @@ export default async (lng) => {
 
       elements.form.addEventListener('submit', async (event) => {
         event.preventDefault();
-        clearTimeout(currentTimerId);
         const formData = new FormData(event.target);
         const url = formData.get('url');
         validate(watchedState.rssUrls, { url })
@@ -118,26 +85,7 @@ export default async (lng) => {
             watchedState.posts.push(...posts);
             checkNewPosts(watchedState.feeds, watchedState.posts);
           })
-          .catch((error) => {
-            const { name } = error;
-            watchedState.form.processError = true;
-            switch (name) {
-              case 'ValidationError':
-                watchedState.form.feedback = error.errors.map((err) => t(err));
-                watchedState.form.valid = false;
-                break;
-              case 'AxiosError':
-                watchedState.form.feedback = t('networkError');
-                watchedState.form.processError = error.message;
-                watchedState.form.processState = 'error';
-                break;
-              case 'RssParsingError':
-                watchedState.form.feedback = t(error.message);
-                break;
-              default:
-                watchedState.form.feedback = t(error.message);
-            }
-          });
+          .catch(errorHandler(watchedState, t));
       });
     });
 };
