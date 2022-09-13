@@ -59,11 +59,11 @@ export default async (lng) => {
         event.preventDefault();
         const url = new FormData(event.target).get('url');
         validate(watchedState.rssUrls, { url })
-          .then(({ url: validUrl }) => {
+          .then(() => {
             watchedState.form.feedback = '';
             watchedState.form.valid = true;
             watchedState.form.processState = 'sending';
-            return getDataFromProxy(validUrl);
+            return getDataFromProxy(url);
           })
           .then(({ data }) => {
             const { feed, items } = parseData(data.contents, 'text/xml');
